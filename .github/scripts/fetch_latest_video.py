@@ -11,7 +11,7 @@ import requests
          """Verifica se o vídeo é um Short com base no título ou descrição."""
          title = entry.find('title').text.lower()
          description = entry.find('{http://search.yahoo.com/mrss/}group/{http://search.yahoo.com/mrss/}description').text.lower()
-         return '#shorts' in title or '#shorts' in description or 'short' in title
+         return '#shorts' in title or '#shorts' in description or 'short' in title or 'reel' in title
 
      def main():
          try:
