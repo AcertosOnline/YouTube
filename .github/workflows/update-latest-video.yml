@@ -1,33 +1,31 @@
-name: Update Latest YouTube Video
+name: Update YouTube Video Link
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Executa a cada 1 hora
-  workflow_dispatch:     # Permite executar manualmente também
+    - cron: '0 * * * *'  # A cada hora
+  workflow_dispatch:
 
 jobs:
-  update-video:
+  update:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.x'
 
-      - name: Install dependencies
-        run: npm install xml2js node-fetch
-
-      - name: Run update script
-        run: node updateVideo.js
+      - name: Run Python script
+        run: python update_video.py
 
       - name: Commit changes
+        if: success() || failure() && steps.run_python.outcome != 'success'  # roda só se houve mudança
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add latestVideo.js
-          git diff --cached --quiet || git commit -m "Update latest video link"
+          git diff --cached --quiet || git commit -m "Atualiza link do vídeo mais recente"
           git push
