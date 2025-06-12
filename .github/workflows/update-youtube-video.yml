@@ -16,6 +16,7 @@ name: Update Latest YouTube Video URL
              uses: actions/checkout@v4
              with:
                ref: main # Força checkout da branch main
+               fetch-depth: 0 # Clona todo o histórico
 
            - name: Debug - List files
              run: |
