@@ -14,7 +14,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11' # Versão específica para consistência
 
       - name: Install dependencies
         run: |
@@ -25,23 +25,40 @@ jobs:
         run: |
           python -c "
 import feedparser
+import sys
 
 # URL do feed do YouTube
 feed_url = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWl8Ma619mTTXoo9P7mASdQ'
 feed = feedparser.parse(feed_url)
 
+# Verificar se o feed foi carregado corretamente
+if not feed.entries:
+    print('Erro: Nenhum vídeo encontrado no feed ou falha ao acessar o feed.')
+    sys.exit(1)
+
 # Encontrar o vídeo mais recente que não é short
 latest_video = None
 for entry in feed.entries:
+    print(f'Processando entrada: {entry.link}')
     # Verifica se é um vídeo (não short) pelo link
     if 'youtu.be' not in entry.link and 'watch' in entry.link:
         latest_video = entry.link
+        print(f'Vídeo encontrado: {latest_video}')
         break
 
+# Verificar se um vídeo válido foi encontrado
+if not latest_video:
+    print('Erro: Nenhum vídeo (não short) encontrado no feed.')
+    sys.exit(1)
+
 # Salvar apenas o link no arquivo .js
-if latest_video:
+try:
     with open('latest_video.js', 'w') as f:
         f.write(f'\"{latest_video}\"')
+    print('Link do vídeo salvo em latest_video.js')
+except Exception as e:
+    print(f'Erro ao salvar o arquivo: {e}')
+    sys.exit(1)
 "
       - name: Commit and push changes
         run: |
@@ -50,3 +67,4 @@ if latest_video:
           git add latest_video.js
           git commit -m 'Update latest YouTube video link' || echo "No changes to commit"
           git push
+        continue-on-error: true # Evita falha do workflow se não houver mudanças
