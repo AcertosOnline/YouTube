@@ -17,6 +17,7 @@ name: Update Latest YouTube Video URL
              with:
                ref: main # Substitua por 'master' ou outra branch se necessário
                fetch-depth: 0 # Clona todo o histórico
+               path: . # Garante que o repositório seja clonado na raiz
 
            - name: Debug - Verify working directory
              run: |
@@ -73,7 +74,7 @@ name: Update Latest YouTube Video URL
                git config user.name "GitHub Action"
                git config user.email "action@github.com"
                git add latest-video.js
-               if ! git diff --quiet || ! git diff --staged --quiet; then
+               if [ -n "$(git status --porcelain)" ]; then
                  git pull --rebase
                  git commit -m "Atualiza URL do vídeo mais recente do YouTube"
                  git push
