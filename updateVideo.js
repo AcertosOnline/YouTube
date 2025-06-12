@@ -1,6 +1,6 @@
-const fetch = require('node-fetch');
-const fs = require('fs');
-const xml2js = require('xml2js');
+import fetch from 'node-fetch';
+import fs from 'fs';
+import { parseStringPromise } from 'xml2js';
 
 const YOUTUBE_FEED_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWl8Ma619mTTXoo9P7mASdQ';
 const OUTPUT_FILE = 'latestVideo.js';
@@ -8,8 +8,7 @@ const OUTPUT_FILE = 'latestVideo.js';
 async function fetchLatestVideoUrl() {
   const response = await fetch(YOUTUBE_FEED_URL);
   const xml = await response.text();
-  const parser = new xml2js.Parser();
-  const result = await parser.parseStringPromise(xml);
+  const result = await parseStringPromise(xml);
   const latestEntry = result.feed.entry?.[0];
 
   if (!latestEntry || !latestEntry.link?.[0]?.$.href) {
