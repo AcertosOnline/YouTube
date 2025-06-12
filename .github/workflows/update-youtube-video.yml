@@ -1,83 +1,53 @@
-name: Update Latest YouTube Video URL
+name: Fetch Latest YouTube Video
+on:
+  schedule:
+    - cron: '0 0 * * *' # Roda todo dia à meia-noite UTC
+  workflow_dispatch: # Permite execução manual
 
-     on:
-       schedule:
-         - cron: '0 * * * *' # Executa a cada hora, no minuto 0
-       workflow_dispatch: # Permite execução manual
+jobs:
+  fetch-latest-video:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-     jobs:
-       update-video:
-         runs-on: ubuntu-latest
-         permissions:
-           contents: write # Permissão para commitar alterações
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
-         steps:
-           - name: Checkout repository
-             uses: actions/checkout@v4
-             with:
-               ref: main # Substitua por 'master' ou outra branch se necessário
-               fetch-depth: 0 # Clona todo o histórico
-               path: . # Garante que o repositório seja clonado na raiz
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser
 
-           - name: Debug - Verify working directory
-             run: |
-               echo "Diretório atual:"
-               pwd
-               echo "Listando arquivos na raiz:"
-               ls -la
-               echo "Buscando arquivos recursivamente:"
-               find . -type f
-               echo "Conteúdo do diretório .github/scripts:"
-               ls -la .github/scripts || echo "Diretório .github/scripts não encontrado"
+      - name: Fetch and process YouTube feed
+        run: |
+          python -c "
+import feedparser
+import re
 
-           - name: Check required files
-             run: |
-               if [ ! -f requirements.txt ]; then
-                 echo "requirements.txt não encontrado"
-                 exit 1
-               fi
-               if [ ! -f .github/scripts/fetch_latest_video.py ]; then
-                 echo "fetch_latest_video.py não encontrado"
-                 exit 1
-               fi
-               if [ ! -f latest-video.js ]; then
-                 echo "latest-video.js não encontrado"
-                 exit 1
-               fi
+# URL do feed do YouTube
+feed_url = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWl8Ma619mTTXoo9P7mASdQ'
+feed = feedparser.parse(feed_url)
 
-           - name: Set up Python
-             uses: actions/setup-python@v5
-             with:
-               python-version: '3.11'
+# Encontrar o vídeo mais recente que não é short
+latest_video = None
+for entry in feed.entries:
+    # Verifica se é um vídeo (não short) pelo link
+    if 'youtu.be' not in entry.link and 'watch' in entry.link:
+        latest_video = entry.link
+        break
 
-           - name: Cache pip
-             uses: actions/cache@v4
-             with:
-               path: ~/.cache/pip
-               key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-               restore-keys: |
-                 ${{ runner.os }}-pip-
-
-           - name: Install dependencies
-             run: |
-               python -m pip install --upgrade pip
-               pip install -r requirements.txt
-
-           - name: Create or update latest-video.js
-             run: |
-               python .github/scripts/fetch_latest_video.py
-             env:
-               CHANNEL_ID: UCWl8Ma619mTTXoo9P7mASdQ
-
-           - name: Commit changes
-             run: |
-               git config user.name "GitHub Action"
-               git config user.email "action@github.com"
-               git add latest-video.js
-               if [ -n "$(git status --porcelain)" ]; then
-                 git pull --rebase
-                 git commit -m "Atualiza URL do vídeo mais recente do YouTube"
-                 git push
-               else
-                 echo "Nenhuma alteração no latest-video.js, pulando commit"
-               fi
+# Salvar o link no arquivo .js
+if latest_video:
+    with open('latest_video.js', 'w') as f:
+        f.write(f'export const latestVideo = \"{latest_video}\";')
+"
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add latest_video.js
+          git commit -m 'Update latest YouTube video link' || echo "No changes to commit"
+          git push
