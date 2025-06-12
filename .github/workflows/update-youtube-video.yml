@@ -15,20 +15,34 @@ name: Update Latest YouTube Video URL
            - name: Checkout repository
              uses: actions/checkout@v4
              with:
-               ref: main # Força checkout da branch main
+               ref: main # Substitua por 'master' ou outra branch se necessário
                fetch-depth: 0 # Clona todo o histórico
 
-           - name: Debug - List files
+           - name: Debug - Verify working directory
              run: |
+               echo "Diretório atual:"
                pwd
+               echo "Listando arquivos na raiz:"
                ls -la
+               echo "Buscando arquivos recursivamente:"
                find . -type f
+               echo "Conteúdo do diretório .github/scripts:"
+               ls -la .github/scripts || echo "Diretório .github/scripts não encontrado"
 
            - name: Check required files
              run: |
-               test -f requirements.txt || (echo "requirements.txt não encontrado" && exit 1)
-               test -f .github/scripts/fetch_latest_video.py || (echo "fetch_latest_video.py não encontrado" && exit 1)
-               test -f latest-video.js || (echo "latest-video.js não encontrado" && exit 1)
+               if [ ! -f requirements.txt ]; then
+                 echo "requirements.txt não encontrado"
+                 exit 1
+               fi
+               if [ ! -f .github/scripts/fetch_latest_video.py ]; then
+                 echo "fetch_latest_video.py não encontrado"
+                 exit 1
+               fi
+               if [ ! -f latest-video.js ]; then
+                 echo "latest-video.js não encontrado"
+                 exit 1
+               fi
 
            - name: Set up Python
              uses: actions/setup-python@v5
@@ -59,4 +73,10 @@ name: Update Latest YouTube Video URL
                git config user.name "GitHub Action"
                git config user.email "action@github.com"
                git add latest-video.js
-               git diff --quiet && git diff --staged --quiet || (git pull --rebase && git commit -m "Atualiza URL do vídeo mais recente do YouTube" && git push)
+               if ! git diff --quiet || ! git diff --staged --quiet; then
+                 git pull --rebase
+                 git commit -m "Atualiza URL do vídeo mais recente do YouTube"
+                 git push
+               else
+                 echo "Nenhuma alteração no latest-video.js, pulando commit"
+               fi
