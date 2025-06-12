@@ -1,3 +1,4 @@
+```yaml
 name: Fetch Latest YouTube Video
 on:
   schedule:
@@ -10,39 +11,52 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Garante permissões para push
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Versão específica para consistência
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install feedparser
+          pip install feedparser requests
 
       - name: Fetch and process YouTube feed
         run: |
           python -c "
 import feedparser
+import requests
 import sys
+import os
 
 # URL do feed do YouTube
 feed_url = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCWl8Ma619mTTXoo9P7mASdQ'
-feed = feedparser.parse(feed_url)
 
-# Verificar se o feed foi carregado corretamente
+# Tenta acessar o feed com verificação de erro
+try:
+    response = requests.get(feed_url, timeout=10)
+    response.raise_for_status()
+    feed = feedparser.parse(response.content)
+except Exception as e:
+    print(f'Erro ao acessar o feed: {e}')
+    sys.exit(1)
+
+# Verificar se o feed contém entradas
 if not feed.entries:
-    print('Erro: Nenhum vídeo encontrado no feed ou falha ao acessar o feed.')
+    print('Erro: Nenhum vídeo encontrado no feed.')
     sys.exit(1)
 
 # Encontrar o vídeo mais recente que não é short
 latest_video = None
 for entry in feed.entries:
-    print(f'Processando entrada: {entry.link}')
+    link = entry.link
+    print(f'Processando entrada: {link}')
     # Verifica se é um vídeo (não short) pelo link
-    if 'youtu.be' not in entry.link and 'watch' in entry.link:
-        latest_video = entry.link
+    if 'youtu.be' not in link and 'watch' in link:
+        latest_video = link
         print(f'Vídeo encontrado: {latest_video}')
         break
 
@@ -67,4 +81,6 @@ except Exception as e:
           git add latest_video.js
           git commit -m 'Update latest YouTube video link' || echo "No changes to commit"
           git push
-        continue-on-error: true # Evita falha do workflow se não houver mudanças
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
