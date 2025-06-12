@@ -4,7 +4,7 @@ import requests
      import sys
 
      # URL do feed RSS do canal do YouTube
-     CHANNEL_ID = os.getenv('CHANNEL_ID')
+     CHANNEL_ID = os.getenv('UCWl8Ma619mTTXoo9P7mASdQ')
      RSS_URL = f'https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}'
 
      def is_short(entry):
