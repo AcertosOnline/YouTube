@@ -1,0 +1,48 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const originalIframe = document.querySelector('iframe[src="https://app.aguiaoficial.com/pr/sAeBgEfV"]');
+
+    if (!originalIframe) {
+        console.error('iframe original não encontrado.');
+        return;
+    }
+
+    originalIframe.addEventListener('load', () => {
+        fetch('https://acertosonline.github.io/YouTube/latestVideo.js')
+            .then(response => response.text())
+            .then(data => {
+                // Extrai a URL do vídeo da variável JS
+                const urlMatch = data.match(/const latestVideoUrl = "(.*?)";/);
+                if (!urlMatch || !urlMatch[1]) {
+                    throw new Error('URL do vídeo não encontrada no arquivo .js');
+                }
+
+                const videoUrl = urlMatch[1];
+                const videoIdMatch = videoUrl.match(/[?&]v=([^&]+)/);
+                if (!videoIdMatch || !videoIdMatch[1]) {
+                    throw new Error('ID do vídeo inválido');
+                }
+
+                const videoId = videoIdMatch[1];
+
+                // Cria o iframe do YouTube
+                const youtubeIframe = document.createElement('iframe');
+                youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0`;
+                youtubeIframe.title = 'Vídeo do YouTube mais recente';
+                youtubeIframe.style.position = 'absolute';
+                youtubeIframe.style.top = '0';
+                youtubeIframe.style.left = '0';
+                youtubeIframe.style.width = '100%';
+                youtubeIframe.style.height = '100%';
+                youtubeIframe.style.border = 'none';
+                youtubeIframe.style.zIndex = '-1';
+                youtubeIframe.allow = 'autoplay; muted';
+
+                document.body.appendChild(youtubeIframe);
+            })
+            .catch(error => {
+                console.error('Erro ao carregar o vídeo do YouTube:', error);
+            });
+    });
+});
+</script>
