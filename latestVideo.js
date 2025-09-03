@@ -1,3 +1,3 @@
 // Atualizado automaticamente
-const latestVideoUrl = "https://www.youtube.com/watch?v=nQpJxbb7j_w";
+const latestVideoUrl = "https://www.youtube.com/watch?v=ugP1HXC_BEU";
 export default latestVideoUrl;
